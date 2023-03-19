@@ -5,24 +5,28 @@ import {
     heightPercentageToDP as hp,
   } from "react-native-responsive-screen";
 import { Image } from 'react-native';
+import ToTimeString from '../utils/ToTimeString';
 
 
 
-export default function WeatherListItem() {
+export default function WeatherListItem({item}) {
+
+
+
   return (
     <View style={styles.itemConatiner} >
 
         <View>
 
-      <Text style={styles.TimeTxt}>12:10 AM</Text>
-      <Text style={styles.WeatherStatus}>Partly Cloud</Text>
+      <Text style={styles.TimeTxt}>{ToTimeString(item.dt)}</Text>
+      <Text style={styles.WeatherStatus}>{item.weather[0].description}</Text>
       </View>
 
 
        
       <View style={{flexDirection:"row",alignItems:"center"}} >
-      <Image style={{width:hp("7%"),height:hp("7%")}} source={{uri: `https://openweathermap.org/img/wn/10n@2x.png`}}/>
-      <Text style={styles.weatherTemTxt}>37°</Text>
+      <Image style={{width:hp("7%"),height:hp("7%")}} source={{uri: `https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`}}/>
+      <Text style={styles.weatherTemTxt}>{parseInt(item.main.temp)}°</Text>
       </View>
 
     </View>

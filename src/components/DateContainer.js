@@ -5,11 +5,20 @@ import {
     heightPercentageToDP as hp,
   } from "react-native-responsive-screen";
   import { Feather } from "@expo/vector-icons";
+import { useSelector } from 'react-redux';
+import { useNavigation } from "@react-navigation/native";
 
 
-export default function DateContainer({item,fiveDayForcast}) {
 
-const fullDayWeatherDetails=fiveDayForcast[item].map((i)=>{
+
+export default function DateContainer({item}) {
+  const { weatherData } = useSelector(
+    (state) => state.weatherAppReducer
+  );
+  const navigation=useNavigation()
+
+
+const fullDayWeatherDetails=weatherData[item].map((i)=>{
 
   return {data:item,...i.main,...i.weather[0]} 
 
@@ -45,10 +54,15 @@ const mostOccurringicon = (Object.keys(overallWeatherCondition.iconList).find(ke
 
 
 
+if((item ===(new Date()).toDateString() )){
+  return <></>
+}
+
+
 
   return (
     
-          <TouchableOpacity style={styles.datesWeatherContainer}>
+          <TouchableOpacity onPress={()=>navigation.navigate("WeatherTimelineScreen",{data:weatherData[item]})} style={styles.datesWeatherContainer}>
             <Text style={styles.smallDateTxt}>{item.slice(4,10)}</Text>
     
             <View style={styles.MainIcon}>

@@ -20,6 +20,8 @@ import { Entypo } from '@expo/vector-icons';
 import DatesContainer from "../components/DateContainer"
 import * as Location from 'expo-location';
 import { useNavigation } from "@react-navigation/native";
+import { useDispatch, useSelector } from "react-redux";
+import { setWeatherData } from "../redux/actions";
 
 
 
@@ -33,14 +35,17 @@ export default function Home() {
 
 
   const [location, setLocation] = useState("");
-  const [weatherData, setWeatherData] = useState([])
+  const [todayData, setTodayData] = useState([])
   const [fiveDayForcast, setFiveDayForcast] = useState({})
   const [weatherSearchBy, setWeatherSearchBy] = useState("Current Location")
   const [cuurentLocationCordinate, setCuurentLocationCordinate] = useState({});
 
 const navigation=useNavigation()
 
-
+const dispatch =useDispatch()
+const { weatherData } = useSelector(
+  (state) => state.weatherAppReducer
+);
 
   useEffect(() => {
     (async () => {
@@ -75,8 +80,8 @@ if(weatherSearchBy==="Current Location"){
 fetch(apiUrl)
   .then(response => response.json())
   .then(data => {
-    setWeatherData(data)
-    console.log(data)
+    setTodayData(data)
+   
   })
   .catch(error => {
     console.log('An error occurred while fetching weather data:', error);
@@ -105,19 +110,20 @@ apiUrl=`https://api.openweathermap.org/data/2.5/forecast?lat=${cuurentLocationCo
  await fetch(apiUrl)
   .then(response => response.json())
   .then(data => {
-
- const tempData= data.list.reduce((arr,curr)=>{
+var tempData={}
+ 
+tempData= data.list.reduce((arr,curr)=>{
 const dt=(new Date(curr.dt*1000)).toDateString()
-if(arr[dt]){
-  arr[dt].push(curr)
-}else{
+if(!arr[dt]){
   arr[dt]=[]
 }
+  arr[dt].push(curr)
+
 return arr
 
  },{})
 
-setFiveDayForcast(tempData)
+ dispatch(setWeatherData(tempData))
 
   })
   .catch(error => {
@@ -177,6 +183,7 @@ useEffect(() => {
             placeholder="Search Location"
             value={location}
             onChangeText={setLocation}
+            onSubmitEditing={()=>{setWeatherSearchBy("Location Name"),getData(),fetchFiveDayForcast()}}
           />
           <TouchableOpacity onPress={()=>{setWeatherSearchBy("Location Name"),getData(),fetchFiveDayForcast()}} style={styles.searchBtn}>
           <AntDesign name="search1" size={hp("3%")} color="white" />
@@ -189,27 +196,27 @@ useEffect(() => {
       <Text style={styles.dateTxt}>{(new Date()).toDateString()}</Text>
 
       <View style={styles.weatherBox}>
-        <Text style={styles.locationName}>{weatherData.name}, {weatherData.sys?.country}</Text>
-        <Text style={styles.tempraature}> {(weatherData.main?weatherData.main.temp:0).toFixed(0)}°</Text>
-        <Text style={styles.weatherStatus}>{weatherData.main?weatherData.weather[0].description:""}</Text>
+        <Text style={styles.locationName}>{todayData.name}, {todayData.sys?.country}</Text>
+        <Text style={styles.tempraature}> {(todayData.main?todayData.main.temp:0).toFixed(0)}°</Text>
+        <Text style={styles.weatherStatus}>{todayData.main?todayData.weather[0].description:""}</Text>
       </View>
 
       <View style={styles.MainIcon}>
         
-      {weatherData.weather?
-        <Image style={{width:hp("15%"),height:hp("15%")}} source={{uri: `https://openweathermap.org/img/wn/${weatherData.weather[0]?.icon}@2x.png`}}/>:
+      {todayData.weather?
+        <Image style={{width:hp("15%"),height:hp("15%")}} source={{uri: `https://openweathermap.org/img/wn/${todayData.weather[0]?.icon}@2x.png`}}/>:
         <></>}
 
       </View>
 
-      <TouchableOpacity onPress={()=>navigation.navigate("WeatherTimelineScreen",{data:"19 Mar"})} style={styles.minMaxTempTxtContainer}>
-        <Text style={styles.minMaxTempTxt} >Min - {weatherData.main?.temp_min}°C</Text>
-        <Text style={styles.minMaxTempTxt} >Max - {weatherData.main?.temp_max}°C</Text>
+      <TouchableOpacity onPress={()=>navigation.navigate("WeatherTimelineScreen",{data: weatherData[(new Date()).toDateString()] })} style={styles.minMaxTempTxtContainer}>
+        <Text style={styles.minMaxTempTxt} >Min - {todayData.main?.temp_min}°C</Text>
+        <Text style={styles.minMaxTempTxt} >Max - {todayData.main?.temp_max}°C</Text>
       </TouchableOpacity> 
 
       <ScrollView contentContainerStyle={{alignItems: "center",paddingHorizontal:wp('3%')}} horizontal style={styles.bottomContainer}>
        
-       {Object.keys(fiveDayForcast).map((item,index)=><DatesContainer key={index} item={item} fiveDayForcast={fiveDayForcast} />)}
+       {Object.keys(weatherData).map((item,index)=><DatesContainer key={index} item={item} fiveDayForcast={fiveDayForcast} />)}
         
       </ScrollView>
     </View>

@@ -1,50 +1,58 @@
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import React from 'react'
-import { AntDesign } from '@expo/vector-icons';
 import {
-    widthPercentageToDP as wp,
-    heightPercentageToDP as hp,
-  } from "react-native-responsive-screen";
-import WeatherListItem from '../components/WeatherListItem';
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import React from "react";
+import { AntDesign } from "@expo/vector-icons";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
+import WeatherListItem from "../components/WeatherListItem";
 
 
-export default function WeatherTimelineScreen({navigation,route}) {
+export default function WeatherTimelineScreen({ navigation, route }) {
+
+  const data=route.params.data
+
+// console.log(data)
+
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <AntDesign name="leftcircle" size={hp("6%")} color="grey" />
+        </TouchableOpacity>
+        <Text style={styles.headerTxt}>Sun, 19 Mar 2023</Text>
+      </View>
 
-<View style={styles.header} >
-
-     <TouchableOpacity onPress={()=>navigation.goBack()}>
-     <AntDesign name="leftcircle" size={hp("6%")} color="grey" />
-     </TouchableOpacity>
-     <Text style={styles.headerTxt}>Sun, 19 Mar 2023</Text>
-</View>
-
-
-<FlatList data={[0,0,0,0,0]} renderItem={({item})=><WeatherListItem/>}
-
-/>
-
+      <FlatList
+        data={data}
+        renderItem={({ item }) => <WeatherListItem item={item} />}
+      />
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
-    container:{
-        flex:1,
-        backgroundColor:"#fff"
-    },
-    header:{
-        marginVertical:hp("2%"),
-        marginHorizontal:wp("2%"),
-        flexDirection:"row",
-        alignItems:"center",
-        alignContent:"center",
-        textAlign:"center"
-    },
-    headerTxt:{
-        fontSize:hp("3%"),
-        marginHorizontal:wp("3%"),
-        fontWeight:"700"
-    }
-})
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  header: {
+    marginVertical: hp("2%"),
+    marginHorizontal: wp("2%"),
+    flexDirection: "row",
+    alignItems: "center",
+    alignContent: "center",
+    textAlign: "center",
+  },
+  headerTxt: {
+    fontSize: hp("3%"),
+    marginHorizontal: wp("3%"),
+    fontWeight: "700",
+  },
+});
