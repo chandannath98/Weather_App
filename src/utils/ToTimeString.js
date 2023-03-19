@@ -1,6 +1,5 @@
 export default function ToTimeString(timestamp){
 
-console.log(timestamp)
    
 const date = new Date(timestamp * 1000); // Convert to milliseconds
 const hours = date.getHours() % 12 || 12; // Get hours in 12-hour format

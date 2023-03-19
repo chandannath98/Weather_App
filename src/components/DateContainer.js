@@ -4,7 +4,6 @@ import {
     widthPercentageToDP as wp,
     heightPercentageToDP as hp,
   } from "react-native-responsive-screen";
-  import { Feather } from "@expo/vector-icons";
 import { useSelector } from 'react-redux';
 import { useNavigation } from "@react-navigation/native";
 
@@ -62,7 +61,7 @@ if((item ===(new Date()).toDateString() )){
 
   return (
     
-          <TouchableOpacity onPress={()=>navigation.navigate("WeatherTimelineScreen",{data:weatherData[item]})} style={styles.datesWeatherContainer}>
+          <TouchableOpacity onPress={()=>navigation.navigate("WeatherTimelineScreen",{data:weatherData[item],date:item})} style={styles.datesWeatherContainer}>
             <Text style={styles.smallDateTxt}>{item.slice(4,10)}</Text>
     
             <View style={styles.MainIcon}>

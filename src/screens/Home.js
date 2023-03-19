@@ -14,15 +14,17 @@ import {
 } from "react-native-responsive-screen";
 import { AntDesign } from "@expo/vector-icons";
 import { EvilIcons } from "@expo/vector-icons";
-import { Feather } from "@expo/vector-icons";
-import axios from "axios";
-import { Entypo } from '@expo/vector-icons';
 import DatesContainer from "../components/DateContainer"
 import * as Location from 'expo-location';
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
 import { setWeatherData } from "../redux/actions";
-
+import {
+  Menu,
+  MenuOptions,
+  MenuOption,
+  MenuTrigger,
+} from "react-native-popup-menu";
 
 
 
@@ -57,7 +59,7 @@ const { weatherData } = useSelector(
       }
 
       let currentLocation = await Location.getCurrentPositionAsync({});
-      console.log(currentLocation)
+      
       setCuurentLocationCordinate(currentLocation);
     })();
   }, []);
@@ -162,22 +164,49 @@ useEffect(() => {
   return (
     <View style={styles.container}>
 
-<TouchableOpacity style={styles.leftPaginationIcon} >
-<Entypo name="chevron-thin-left" size={wp("10%")} color="#dee1e6" />
-</TouchableOpacity>
 
-<TouchableOpacity style={styles.rightPaginationIcon} >
-<Entypo name="chevron-thin-right" size={wp("10%")} color="#dee1e6" />
-</TouchableOpacity>
 
 
       <View style={styles.locationSearchContainer}>
         
         <View style={styles.locationSearchInputBox}>
-        <TouchableOpacity style={styles.searchBtn}>
+
+        <Menu>
+          <MenuTrigger style={styles.searchBtn}>
+          
+
+
+
+
+        {/* <TouchableOpacity style={styles.searchBtn}> */}
 
           <EvilIcons name="location" size={hp("3%")} color="white" />
-          </TouchableOpacity>
+          {/* </TouchableOpacity> */}
+
+
+
+          </MenuTrigger>
+          <MenuOptions style={{ padding: 10, borderRadius: 10 }}>
+            <MenuOption
+              onSelect={() => {
+                setWeatherSearchBy("Current Location")
+                setLocation("")
+              }}
+              text="Current Location"
+            />
+            <MenuOption onSelect={() => setRnmodalvisible(true)}>
+              <Text style={{ color: "red" }}>Delete</Text>
+            </MenuOption>
+            
+          </MenuOptions>
+        </Menu>
+
+
+
+
+
+
+
           <TextInput
             style={styles.searchInputStyle}
             placeholder="Search Location"
