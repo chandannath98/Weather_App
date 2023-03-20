@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
@@ -26,6 +27,8 @@ import {
   MenuTrigger,
 } from "react-native-popup-menu";
 
+import NetInfo from '@react-native-community/netinfo';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 
@@ -35,131 +38,159 @@ import {
 export default function Home() {
 
 
-
   const [location, setLocation] = useState("");
-  const [todayData, setTodayData] = useState([])
-  const [fiveDayForcast, setFiveDayForcast] = useState({})
-  const [weatherSearchBy, setWeatherSearchBy] = useState("Current Location")
-  const [cuurentLocationCordinate, setCuurentLocationCordinate] = useState({});
+  const [todayData, setTodayData] = useState(null);
+  const [savedLocations, setSavedLocations] = useState([])
+  const [weatherSearchBy, setWeatherSearchBy] = useState("Current Location");
+  const [currentLocationCoordinate, setCurrentLocationCoordinate] = useState(null);
+  
 
-const navigation=useNavigation()
 
-const dispatch =useDispatch()
-const { weatherData } = useSelector(
-  (state) => state.weatherAppReducer
-);
-
-  useEffect(() => {
+  
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const { weatherData } = useSelector((state) => state.weatherAppReducer);
+  
+  useEffect(() => { 
     (async () => {
-      
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         console.log('Permission to access location was denied');
         return;
       }
-
+  
       let currentLocation = await Location.getCurrentPositionAsync({});
-      
-      setCuurentLocationCordinate(currentLocation);
+      setCurrentLocationCoordinate(currentLocation);
     })();
   }, []);
 
 
 
 
-async function getData(){
-try{
-let apiUrl
-if(weatherSearchBy==="Current Location"){
-  apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${cuurentLocationCordinate.coords.latitude}&lon=${cuurentLocationCordinate.coords.longitude}&units=metric&appid=b9ff75b356281a43047db7c105a5bfc9`;
+async function setSavedLocationsToStorage(loc){
+
+await AsyncStorage.getItem('savedLocations').then(async(data) => {
+  if (data) {
+      await AsyncStorage.setItem('savedLocations', JSON.stringify([...JSON.parse(data),loc]));
+      setSavedLocations([...JSON.parse(data),loc])
+
+    }else{
+      
+      await AsyncStorage.setItem('savedLocations', JSON.stringify([loc]));
+    }
+
+
+
+}
+  )
+}
+
   
-}else{
-  apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${location}&units=metric&appid=b9ff75b356281a43047db7c105a5bfc9`;
+
+async function getSavedLocations(loc){
+
+ await AsyncStorage.getItem('savedLocations').then(async(data) => {
+    if (data) {
+      // console.log(data)
+      setSavedLocations(JSON.parse(data))
+    }
+
+
+
 }
-   
+  )}
 
-// Fetch the weather data
-fetch(apiUrl)
-  .then(response => response.json())
-  .then(data => {
-    setTodayData(data)
-   
-  })
-  .catch(error => {
-    console.log('An error occurred while fetching weather data:', error);
-  });
-
-
-
-}catch{
-  console.log("error")
-}
-}
-
-
-
-
-const fetchFiveDayForcast=async()=>{
-try{
-  let apiUrl
-  if(weatherSearchBy==="Current Location"){
-apiUrl=`https://api.openweathermap.org/data/2.5/forecast?lat=${cuurentLocationCordinate.coords?.latitude}&lon=${cuurentLocationCordinate.coords?.longitude}&units=metric&id=524901&appid=b9ff75b356281a43047db7c105a5bfc9`
-  }else{
-    apiUrl=`https://api.openweathermap.org/data/2.5/forecast?q=${location}&units=metric&id=524901&appid=b9ff75b356281a43047db7c105a5bfc9`
+  
+  
+  async function getWeatherData(location) {
+    try {
+      let apiUrl;
+      if (weatherSearchBy === "Current Location") {
+        apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${currentLocationCoordinate.coords.latitude}&lon=${currentLocationCoordinate.coords.longitude}&units=metric&appid=b9ff75b356281a43047db7c105a5bfc9`;
+      } else {
+        apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${location}&units=metric&appid=b9ff75b356281a43047db7c105a5bfc9`;
+      }
+      const response = await fetch(apiUrl)
+      const data = await response.json();
+      setTodayData(data);
+  
+      // Save the data in AsyncStorage
+      await AsyncStorage.setItem('todayData', JSON.stringify(data));
+    } catch {
+      console.log("An error occurred while fetching weather data");
+    }
+  }
+  
+  async function getFiveDayForecast(location) {
+    try {
+      let apiUrl;
+      if (weatherSearchBy === "Current Location") {
+        apiUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${currentLocationCoordinate.coords?.latitude}&lon=${currentLocationCoordinate.coords?.longitude}&units=metric&id=524901&appid=b9ff75b356281a43047db7c105a5bfc9`
+      } else {
+        apiUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${location}&units=metric&id=524901&appid=b9ff75b356281a43047db7c105a5bfc9`
+      }
+      const response = await fetch(apiUrl);
+      const data = await response.json();
+      const tempData = data.list.reduce((acc, curr) => {
+        const dt = new Date(curr.dt * 1000).toDateString();
+        if (!acc[dt]) {
+          acc[dt] = [];
+        }
+        acc[dt].push(curr);
+        return acc;
+      }, {});
+      dispatch(setWeatherData(tempData));
+  
+      // Save the data in AsyncStorage
+      await AsyncStorage.setItem('fiveDayForecast', JSON.stringify(tempData));
+    } catch {
+      console.log("An error occurred while fetching weather forecast data");
+    }
   }
 
+  useEffect(() => {
+    // Check if there is internet connection
+    NetInfo.fetch().then((state) => {
+      if (state.isConnected) {
 
- await fetch(apiUrl)
-  .then(response => response.json())
-  .then(data => {
-var tempData={}
- 
-tempData= data.list.reduce((arr,curr)=>{
-const dt=(new Date(curr.dt*1000)).toDateString()
-if(!arr[dt]){
-  arr[dt]=[]
-}
-  arr[dt].push(curr)
+        
 
-return arr
+        if (currentLocationCoordinate) {
+          getWeatherData(location);
+          getFiveDayForecast(location);
+          getSavedLocations(location)
+        }
+      } else {
+        getSavedLocations()
 
- },{})
-
- dispatch(setWeatherData(tempData))
-
-  })
-  .catch(error => {
-    console.log('An error occurred while fetching weather data:', error);
-  });
-
-
-
-
-}catch{
-  console.log("error")
-}
-}
+        // If there is no internet connection, load the data from AsyncStorage
+        AsyncStorage.getItem('todayData').then((data) => {
+          if (data) {
+            setTodayData(JSON.parse(data));
+          }
+        });
+        AsyncStorage.getItem('fiveDayForecast').then((data) => {
+          if (data) {
+            dispatch(setWeatherData(JSON.parse(data)));
+          }
+        });
+      }
+    });
+  }, [currentLocationCoordinate, weatherSearchBy]);
 
 
+  if(!todayData){
+    return(
+    <View style={styles.container}>
 
 
-useEffect(() => {
-  getData()
-}, [cuurentLocationCordinate,weatherSearchBy])
+<Text style={{fontSize:hp("3%"),margin:hp("5%"),alignSelf:"center"}}>Loading....</Text>
 
+      <ActivityIndicator size={"large"} />
 
-
-
-useEffect(() => {
-  fetchFiveDayForcast()
-}, [cuurentLocationCordinate,weatherSearchBy])
-
-
-
-
-
-
-  
+      </View>
+    )
+  }
 
   return (
     <View style={styles.container}>
@@ -194,9 +225,13 @@ useEffect(() => {
               }}
               text="Current Location"
             />
-            <MenuOption onSelect={() => setRnmodalvisible(true)}>
-              <Text style={{ color: "red" }}>Delete</Text>
-            </MenuOption>
+
+{savedLocations.map((i)=><MenuOption  key={i} onSelect={() => {setWeatherSearchBy("Location Name"),getWeatherData(i),getFiveDayForecast(i)}}>
+              <Text >{i}</Text>
+
+
+            </MenuOption>)}
+            
             
           </MenuOptions>
         </Menu>
@@ -212,11 +247,14 @@ useEffect(() => {
             placeholder="Search Location"
             value={location}
             onChangeText={setLocation}
-            onSubmitEditing={()=>{setWeatherSearchBy("Location Name"),getData(),fetchFiveDayForcast()}}
+            onSubmitEditing={()=>{setWeatherSearchBy("Location Name"),getWeatherData(location),getFiveDayForecast(location)}}
           />
-          <TouchableOpacity onPress={()=>{setWeatherSearchBy("Location Name"),getData(),fetchFiveDayForcast()}} style={styles.searchBtn}>
+          
+          <TouchableOpacity onPress={()=>{setWeatherSearchBy("Location Name"),getWeatherData(location),getFiveDayForecast(location)}} style={styles.searchBtn}>
           <AntDesign name="search1" size={hp("3%")} color="white" />
         </TouchableOpacity>
+
+
         </View>
 
         
@@ -225,7 +263,15 @@ useEffect(() => {
       <Text style={styles.dateTxt}>{(new Date()).toDateString()}</Text>
 
       <View style={styles.weatherBox}>
-        <Text style={styles.locationName}>{todayData.name}, {todayData.sys?.country}</Text>
+        <Text style={styles.locationName}>{todayData.name}, {todayData.sys?.country}
+        
+        {!savedLocations.includes(todayData.name)?
+        <TouchableOpacity onPress={()=>setSavedLocationsToStorage(todayData.name)} >
+        <Text style={{color:"#2987c2"}}>  Save Location</Text>
+        </TouchableOpacity>:<></>}
+
+        
+        </Text>
         <Text style={styles.tempraature}> {(todayData.main?todayData.main.temp:0).toFixed(0)}°</Text>
         <Text style={styles.weatherStatus}>{todayData.main?todayData.weather[0].description:""}</Text>
       </View>
@@ -242,14 +288,17 @@ useEffect(() => {
         <Text style={styles.minMaxTempTxt} >Min - {todayData.main?.temp_min}°C</Text>
         <Text style={styles.minMaxTempTxt} >Max - {todayData.main?.temp_max}°C</Text>
       </TouchableOpacity> 
-
+     
       <ScrollView contentContainerStyle={{alignItems: "center",paddingHorizontal:wp('3%')}} horizontal style={styles.bottomContainer}>
        
-       {Object.keys(weatherData).map((item,index)=><DatesContainer key={index} item={item} fiveDayForcast={fiveDayForcast} />)}
+       {Object.keys(weatherData).map((item,index)=><DatesContainer key={index} item={item}  />)}
         
       </ScrollView>
     </View>
   );
+
+
+
 }
 
 const styles = StyleSheet.create({
