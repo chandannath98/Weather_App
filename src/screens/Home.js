@@ -119,10 +119,11 @@ async function getSavedLocations(loc){
 
   
   
-  async function getWeatherData() {
+  async function getWeatherData(location,searchBy) {
     try {
       let apiUrl;
-      if (weatherSearchBy === "Current Location") {
+      const searchByValue=searchBy ?searchBy:weatherSearchBy
+      if (searchByValue === "Current Location") {
         apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${currentLocationCoordinate.coords.latitude}&lon=${currentLocationCoordinate.coords.longitude}&units=metric&appid=b9ff75b356281a43047db7c105a5bfc9`;
       } else {
         apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${location}&units=metric&appid=b9ff75b356281a43047db7c105a5bfc9`;
@@ -143,10 +144,11 @@ async function getSavedLocations(loc){
     }
   }
   
-  async function getFiveDayForecast() {
+  async function getFiveDayForecast(location,searchBy) {
     try {
       let apiUrl;
-      if (weatherSearchBy === "Current Location") {
+      const searchByValue=searchBy ?searchBy:weatherSearchBy
+      if (searchByValue === "Current Location") {
         apiUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${currentLocationCoordinate.coords?.latitude}&lon=${currentLocationCoordinate.coords?.longitude}&units=metric&id=524901&appid=b9ff75b356281a43047db7c105a5bfc9`
       } else {
         apiUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${location}&units=metric&id=524901&appid=b9ff75b356281a43047db7c105a5bfc9`
@@ -181,8 +183,8 @@ async function getSavedLocations(loc){
         
         if (currentLocationCoordinate) {
          
-          getWeatherData();
-          getFiveDayForecast();
+          getWeatherData(location);
+          getFiveDayForecast(location);
           getSavedLocations()
         }
       } else {
@@ -203,7 +205,7 @@ async function getSavedLocations(loc){
         });
       }
     });
-  }, [currentLocationCoordinate, weatherSearchBy]);
+  }, [currentLocationCoordinate]);
 
 
 
@@ -237,11 +239,15 @@ async function getSavedLocations(loc){
               onSelect={() => {
                 setWeatherSearchBy("Current Location")
                 setLocation("")
+                getWeatherData(location,"Current Location")
+getFiveDayForecast(location,"Location Name")
               }}
               text="Current Location"
             />
 
-{savedLocations.map((i)=><MenuOption  key={i} onSelect={() => {setWeatherSearchBy("Location Name"),getWeatherData(i),getFiveDayForecast(i)}}>
+{savedLocations.map((i)=><MenuOption  key={i} onSelect={() => {setWeatherSearchBy("Location Name")
+getWeatherData(i,"Location Name")
+getFiveDayForecast(i,"Location Name")}}>
               <Text >{i}</Text>
 
 
@@ -262,10 +268,10 @@ async function getSavedLocations(loc){
             placeholder="Search Location"
             value={location}
             onChangeText={setLocation}
-            onSubmitEditing={()=>{setWeatherSearchBy("Location Name"),getWeatherData(location),getFiveDayForecast(location)}}
+            onSubmitEditing={()=>{setWeatherSearchBy("Location Name"),getWeatherData(location,"Location Name"),getFiveDayForecast(location,"Location Name")}}
           />
           
-          <TouchableOpacity onPress={()=>{setWeatherSearchBy("Location Name"),getWeatherData(location),getFiveDayForecast(location)}} style={styles.searchBtn}>
+          <TouchableOpacity onPress={()=>{setWeatherSearchBy("Location Name"),getWeatherData(location,"Location Name"),getFiveDayForecast(location,"Location Name")}} style={styles.searchBtn}>
           <AntDesign name="search1" size={hp("3%")} color="white" />
         </TouchableOpacity>
 
