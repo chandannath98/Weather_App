@@ -52,18 +52,32 @@ export default function Home() {
   const dispatch = useDispatch();
   const { weatherData } = useSelector((state) => state.weatherAppReducer);
   
-  useEffect(() => { 
+  useEffect(() => {
     (async () => {
+      
       let { status } = await Location.requestForegroundPermissionsAsync();
+    
       if (status !== 'granted') {
-        console.log('Permission to access location was denied');
+        setErrorMsg('Permission to access location was denied');
         return;
+      }else{
+       
+         await Location.getCurrentPositionAsync().then((loc)=>{
+
+          setCurrentLocationCoordinate( loc);
+        })
+    
       }
-  
-      let currentLocation = await Location.getCurrentPositionAsync({});
-      setCurrentLocationCoordinate(currentLocation);
+
+      
     })();
   }, []);
+
+
+
+
+
+
 
 
 
@@ -78,6 +92,8 @@ await AsyncStorage.getItem('savedLocations').then(async(data) => {
     }else{
       
       await AsyncStorage.setItem('savedLocations', JSON.stringify([loc]));
+      setSavedLocations([loc])
+
     }
 
 
@@ -157,16 +173,21 @@ async function getSavedLocations(loc){
   useEffect(() => {
     // Check if there is internet connection
     NetInfo.fetch().then((state) => {
+
+      
+      
       if (state.isConnected) {
-
+       
         
-
         if (currentLocationCoordinate) {
+         
           getWeatherData();
           getFiveDayForecast();
           getSavedLocations()
         }
       } else {
+
+        Alert.alert("Internet is not Connected")
         getSavedLocations()
 
         // If there is no internet connection, load the data from AsyncStorage
@@ -258,7 +279,7 @@ async function getSavedLocations(loc){
 :
 
 
-<View style={{flex:1}}>
+<View  style={{flex:1}}>
 
     
 
@@ -291,7 +312,7 @@ async function getSavedLocations(loc){
 
       </View>
 
-      <TouchableOpacity onPress={()=>navigation.navigate("WeatherTimelineScreen",{data: weatherData[(new Date()).toDateString()] })} style={styles.minMaxTempTxtContainer}>
+      <TouchableOpacity onPress={()=>navigation.navigate("WeatherTimelineScreen",{date: (new Date()).toDateString() })} style={styles.minMaxTempTxtContainer}>
         <Text style={styles.minMaxTempTxt} >Min - {todayData.main?.temp_min}°C</Text>
         <Text style={styles.minMaxTempTxt} >Max - {todayData.main?.temp_max}°C</Text>
       </TouchableOpacity> 
