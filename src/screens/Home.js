@@ -1,5 +1,6 @@
 import {
   ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -102,7 +103,7 @@ async function getSavedLocations(loc){
 
   
   
-  async function getWeatherData(location) {
+  async function getWeatherData() {
     try {
       let apiUrl;
       if (weatherSearchBy === "Current Location") {
@@ -112,7 +113,12 @@ async function getSavedLocations(loc){
       }
       const response = await fetch(apiUrl)
       const data = await response.json();
-      setTodayData(data);
+     if(response.status==200){
+
+       setTodayData(data);
+      }else{
+        Alert.alert(data.message)
+      }
   
       // Save the data in AsyncStorage
       await AsyncStorage.setItem('todayData', JSON.stringify(data));
@@ -121,7 +127,7 @@ async function getSavedLocations(loc){
     }
   }
   
-  async function getFiveDayForecast(location) {
+  async function getFiveDayForecast() {
     try {
       let apiUrl;
       if (weatherSearchBy === "Current Location") {
@@ -156,9 +162,9 @@ async function getSavedLocations(loc){
         
 
         if (currentLocationCoordinate) {
-          getWeatherData(location);
-          getFiveDayForecast(location);
-          getSavedLocations(location)
+          getWeatherData();
+          getFiveDayForecast();
+          getSavedLocations()
         }
       } else {
         getSavedLocations()
@@ -179,18 +185,6 @@ async function getSavedLocations(loc){
   }, [currentLocationCoordinate, weatherSearchBy]);
 
 
-  if(!todayData){
-    return(
-    <View style={styles.container}>
-
-
-<Text style={{fontSize:hp("3%"),margin:hp("5%"),alignSelf:"center"}}>Loading....</Text>
-
-      <ActivityIndicator size={"large"} />
-
-      </View>
-    )
-  }
 
   return (
     <View style={styles.container}>
@@ -259,14 +253,27 @@ async function getSavedLocations(loc){
 
         
       </View>
+{!todayData ?
+      <ActivityIndicator size={"large"} />
+:
+
+
+<View style={{flex:1}}>
+
+    
+
+
+
+
+
 
       <Text style={styles.dateTxt}>{(new Date()).toDateString()}</Text>
 
       <View style={styles.weatherBox}>
-        <Text style={styles.locationName}>{todayData.name}, {todayData.sys?.country}
+        <Text style={styles.locationName}>{todayData?.name}, {todayData?.sys?.country}
         
-        {!savedLocations.includes(todayData.name)?
-        <TouchableOpacity onPress={()=>setSavedLocationsToStorage(todayData.name)} >
+        {!savedLocations.includes(todayData?.name)?
+        <TouchableOpacity onPress={()=>setSavedLocationsToStorage(todayData?.name)} >
         <Text style={{color:"#2987c2"}}>  Save Location</Text>
         </TouchableOpacity>:<></>}
 
@@ -294,6 +301,10 @@ async function getSavedLocations(loc){
        {Object.keys(weatherData).map((item,index)=><DatesContainer key={index} item={item}  />)}
         
       </ScrollView>
+      </View>
+      
+      }
+
     </View>
   );
 
