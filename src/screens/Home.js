@@ -16,8 +16,8 @@ import {
 } from "react-native-responsive-screen";
 import { AntDesign } from "@expo/vector-icons";
 import { EvilIcons } from "@expo/vector-icons";
-import DatesContainer from "../components/DateContainer"
-import * as Location from 'expo-location';
+import DatesContainer from "../components/DateContainer";
+import * as Location from "expo-location";
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
 import { setWeatherData } from "../redux/actions";
@@ -28,130 +28,92 @@ import {
   MenuTrigger,
 } from "react-native-popup-menu";
 
-import NetInfo from '@react-native-community/netinfo';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-
-
-
-
+import NetInfo from "@react-native-community/netinfo";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Home() {
-
-
   const [location, setLocation] = useState("");
   const [todayData, setTodayData] = useState(null);
-  const [savedLocations, setSavedLocations] = useState([])
+  const [savedLocations, setSavedLocations] = useState([]);
   const [weatherSearchBy, setWeatherSearchBy] = useState("Current Location");
-  const [currentLocationCoordinate, setCurrentLocationCoordinate] = useState(null);
-  
+  const [currentLocationCoordinate, setCurrentLocationCoordinate] =
+    useState(null);
 
-
-  
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { weatherData } = useSelector((state) => state.weatherAppReducer);
-  
+
   useEffect(() => {
     (async () => {
-      
       let { status } = await Location.requestForegroundPermissionsAsync();
-    
-      if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
+
+      if (status !== "granted") {
+        setErrorMsg("Permission to access location was denied");
         return;
-      }else{
-       
-         await Location.getCurrentPositionAsync().then((loc)=>{
-
-          setCurrentLocationCoordinate( loc);
-        })
-    
+      } else {
+        await Location.getCurrentPositionAsync().then((loc) => {
+          setCurrentLocationCoordinate(loc);
+        });
       }
-
-      
     })();
   }, []);
 
+  async function setSavedLocationsToStorage(loc) {
+    await AsyncStorage.getItem("savedLocations").then(async (data) => {
+      if (data) {
+        await AsyncStorage.setItem(
+          "savedLocations",
+          JSON.stringify([...JSON.parse(data), loc])
+        );
+        setSavedLocations([...JSON.parse(data), loc]);
+      } else {
+        await AsyncStorage.setItem("savedLocations", JSON.stringify([loc]));
+        setSavedLocations([loc]);
+      }
+    });
+  }
 
+  async function getSavedLocations(loc) {
+    await AsyncStorage.getItem("savedLocations").then(async (data) => {
+      if (data) {
+        // console.log(data)
+        setSavedLocations(JSON.parse(data));
+      }
+    });
+  }
 
-
-
-
-
-
-
-
-async function setSavedLocationsToStorage(loc){
-
-await AsyncStorage.getItem('savedLocations').then(async(data) => {
-  if (data) {
-      await AsyncStorage.setItem('savedLocations', JSON.stringify([...JSON.parse(data),loc]));
-      setSavedLocations([...JSON.parse(data),loc])
-
-    }else{
-      
-      await AsyncStorage.setItem('savedLocations', JSON.stringify([loc]));
-      setSavedLocations([loc])
-
-    }
-
-
-
-}
-  )
-}
-
-  
-
-async function getSavedLocations(loc){
-
- await AsyncStorage.getItem('savedLocations').then(async(data) => {
-    if (data) {
-      // console.log(data)
-      setSavedLocations(JSON.parse(data))
-    }
-
-
-
-}
-  )}
-
-  
-  
-  async function getWeatherData(location,searchBy) {
+  async function getWeatherData(location, searchBy) {
     try {
       let apiUrl;
-      const searchByValue=searchBy ?searchBy:weatherSearchBy
+      const searchByValue = searchBy ? searchBy : weatherSearchBy;
       if (searchByValue === "Current Location") {
         apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${currentLocationCoordinate.coords.latitude}&lon=${currentLocationCoordinate.coords.longitude}&units=metric&appid=b9ff75b356281a43047db7c105a5bfc9`;
       } else {
         apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${location}&units=metric&appid=b9ff75b356281a43047db7c105a5bfc9`;
       }
-      const response = await fetch(apiUrl)
+      const response = await fetch(apiUrl);
       const data = await response.json();
-     if(response.status==200){
-
-       setTodayData(data);
-      }else{
-        Alert.alert(data.message)
+      if (response.status == 200) {
+        setTodayData(data);
+      } else {
+        Alert.alert(data.message);
       }
-  
+
       // Save the data in AsyncStorage
-      await AsyncStorage.setItem('todayData', JSON.stringify(data));
+      await AsyncStorage.setItem("todayData", JSON.stringify(data));
     } catch {
       console.log("An error occurred while fetching weather data");
     }
   }
-  
-  async function getFiveDayForecast(location,searchBy) {
+
+  async function getFiveDayForecast(location, searchBy) {
     try {
       let apiUrl;
-      const searchByValue=searchBy ?searchBy:weatherSearchBy
+      const searchByValue = searchBy ? searchBy : weatherSearchBy;
       if (searchByValue === "Current Location") {
-        apiUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${currentLocationCoordinate.coords?.latitude}&lon=${currentLocationCoordinate.coords?.longitude}&units=metric&id=524901&appid=b9ff75b356281a43047db7c105a5bfc9`
+        apiUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${currentLocationCoordinate.coords?.latitude}&lon=${currentLocationCoordinate.coords?.longitude}&units=metric&id=524901&appid=b9ff75b356281a43047db7c105a5bfc9`;
       } else {
-        apiUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${location}&units=metric&id=524901&appid=b9ff75b356281a43047db7c105a5bfc9`
+        apiUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${location}&units=metric&id=524901&appid=b9ff75b356281a43047db7c105a5bfc9`;
       }
       const response = await fetch(apiUrl);
       const data = await response.json();
@@ -164,9 +126,9 @@ async function getSavedLocations(loc){
         return acc;
       }, {});
       dispatch(setWeatherData(tempData));
-  
+
       // Save the data in AsyncStorage
-      await AsyncStorage.setItem('fiveDayForecast', JSON.stringify(tempData));
+      await AsyncStorage.setItem("fiveDayForecast", JSON.stringify(tempData));
     } catch {
       console.log("An error occurred while fetching weather forecast data");
     }
@@ -175,30 +137,23 @@ async function getSavedLocations(loc){
   useEffect(() => {
     // Check if there is internet connection
     NetInfo.fetch().then((state) => {
-
-      
-      
       if (state.isConnected) {
-       
-        
         if (currentLocationCoordinate) {
-         
           getWeatherData(location);
           getFiveDayForecast(location);
-          getSavedLocations()
+          getSavedLocations();
         }
       } else {
-
-        Alert.alert("Internet is not Connected")
-        getSavedLocations()
+        Alert.alert("Internet is not Connected");
+        getSavedLocations();
 
         // If there is no internet connection, load the data from AsyncStorage
-        AsyncStorage.getItem('todayData').then((data) => {
+        AsyncStorage.getItem("todayData").then((data) => {
           if (data) {
             setTodayData(JSON.parse(data));
           }
         });
-        AsyncStorage.getItem('fiveDayForecast').then((data) => {
+        AsyncStorage.getItem("fiveDayForecast").then((data) => {
           if (data) {
             dispatch(setWeatherData(JSON.parse(data)));
           }
@@ -207,136 +162,144 @@ async function getSavedLocations(loc){
     });
   }, [currentLocationCoordinate]);
 
-
-
   return (
     <View style={styles.container}>
-
-
-
-
       <View style={styles.locationSearchContainer}>
-        
         <View style={styles.locationSearchInputBox}>
+          <Menu>
+            <MenuTrigger style={styles.searchBtn}>
+              {/* <TouchableOpacity style={styles.searchBtn}> */}
 
-        <Menu>
-          <MenuTrigger style={styles.searchBtn}>
-          
+              <EvilIcons name="location" size={hp("3%")} color="white" />
+              {/* </TouchableOpacity> */}
+            </MenuTrigger>
+            <MenuOptions style={{ padding: 10, borderRadius: 10 }}>
+              <MenuOption
+                onSelect={() => {
+                  setWeatherSearchBy("Current Location");
+                  setLocation("");
+                  getWeatherData(location, "Current Location");
+                  getFiveDayForecast(location, "Location Name");
+                }}
+                text="Current Location"
+              />
 
-
-
-
-        {/* <TouchableOpacity style={styles.searchBtn}> */}
-
-          <EvilIcons name="location" size={hp("3%")} color="white" />
-          {/* </TouchableOpacity> */}
-
-
-
-          </MenuTrigger>
-          <MenuOptions style={{ padding: 10, borderRadius: 10 }}>
-            <MenuOption
-              onSelect={() => {
-                setWeatherSearchBy("Current Location")
-                setLocation("")
-                getWeatherData(location,"Current Location")
-getFiveDayForecast(location,"Location Name")
-              }}
-              text="Current Location"
-            />
-
-{savedLocations.map((i)=><MenuOption  key={i} onSelect={() => {setWeatherSearchBy("Location Name")
-getWeatherData(i,"Location Name")
-getFiveDayForecast(i,"Location Name")}}>
-              <Text >{i}</Text>
-
-
-            </MenuOption>)}
-            
-            
-          </MenuOptions>
-        </Menu>
-
-
-
-
-
-
+              {savedLocations.map((i) => (
+                <MenuOption
+                  key={i}
+                  onSelect={() => {
+                    setWeatherSearchBy("Location Name");
+                    getWeatherData(i, "Location Name");
+                    getFiveDayForecast(i, "Location Name");
+                  }}
+                >
+                  <Text>{i}</Text>
+                </MenuOption>
+              ))}
+            </MenuOptions>
+          </Menu>
 
           <TextInput
             style={styles.searchInputStyle}
             placeholder="Search Location"
             value={location}
             onChangeText={setLocation}
-            onSubmitEditing={()=>{setWeatherSearchBy("Location Name"),getWeatherData(location,"Location Name"),getFiveDayForecast(location,"Location Name")}}
+            onSubmitEditing={() => {
+              if (location.length > 0) {
+                setWeatherSearchBy("Location Name"),
+                  getWeatherData(location, "Location Name"),
+                  getFiveDayForecast(location, "Location Name");
+              }
+            }}
           />
-          
-          <TouchableOpacity onPress={()=>{setWeatherSearchBy("Location Name"),getWeatherData(location,"Location Name"),getFiveDayForecast(location,"Location Name")}} style={styles.searchBtn}>
-          <AntDesign name="search1" size={hp("3%")} color="white" />
-        </TouchableOpacity>
 
-
+          <TouchableOpacity
+            onPress={() => {
+              if (location.length > 0) {
+                setWeatherSearchBy("Location Name"),
+                  getWeatherData(location, "Location Name"),
+                  getFiveDayForecast(location, "Location Name");
+              }
+            }}
+            style={styles.searchBtn}
+          >
+            <AntDesign name="search1" size={hp("3%")} color="white" />
+          </TouchableOpacity>
         </View>
-
-        
       </View>
-{!todayData ?
-      <ActivityIndicator size={"large"} />
-:
+      {!todayData ? (
+        <ActivityIndicator size={"large"} />
+      ) : (
+        <View style={{ flex: 1 }}>
+          <Text style={styles.dateTxt}>{new Date().toDateString()}</Text>
 
+          <View style={styles.weatherBox}>
+            <Text style={styles.locationName}>
+              {todayData?.name}, {todayData?.sys?.country}
+              {!savedLocations.includes(todayData?.name) ? (
+                <TouchableOpacity
+                  onPress={() => setSavedLocationsToStorage(todayData?.name)}
+                >
+                  <Text style={{ color: "#2987c2" }}> Save Location</Text>
+                </TouchableOpacity>
+              ) : (
+                <></>
+              )}
+            </Text>
+            <Text style={styles.tempraature}>
+              {" "}
+              {(todayData.main ? todayData.main.temp : 0).toFixed(0)}°
+            </Text>
+            <Text style={styles.weatherStatus}>
+              {todayData.main ? todayData.weather[0].description : ""}
+            </Text>
+          </View>
 
-<View  style={{flex:1}}>
+          <View style={styles.MainIcon}>
+            {todayData.weather ? (
+              <Image
+                style={{ width: hp("15%"), height: hp("15%") }}
+                source={{
+                  uri: `https://openweathermap.org/img/wn/${todayData.weather[0]?.icon}@2x.png`,
+                }}
+              />
+            ) : (
+              <></>
+            )}
+          </View>
 
-    
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("WeatherTimelineScreen", {
+                date: new Date().toDateString(),
+              })
+            }
+            style={styles.minMaxTempTxtContainer}
+          >
+            <Text style={styles.minMaxTempTxt}>
+              Min - {todayData.main?.temp_min}°C
+            </Text>
+            <Text style={styles.minMaxTempTxt}>
+              Max - {todayData.main?.temp_max}°C
+            </Text>
+          </TouchableOpacity>
 
-
-
-
-
-
-      <Text style={styles.dateTxt}>{(new Date()).toDateString()}</Text>
-
-      <View style={styles.weatherBox}>
-        <Text style={styles.locationName}>{todayData?.name}, {todayData?.sys?.country}
-        
-        {!savedLocations.includes(todayData?.name)?
-        <TouchableOpacity onPress={()=>setSavedLocationsToStorage(todayData?.name)} >
-        <Text style={{color:"#2987c2"}}>  Save Location</Text>
-        </TouchableOpacity>:<></>}
-
-        
-        </Text>
-        <Text style={styles.tempraature}> {(todayData.main?todayData.main.temp:0).toFixed(0)}°</Text>
-        <Text style={styles.weatherStatus}>{todayData.main?todayData.weather[0].description:""}</Text>
-      </View>
-
-      <View style={styles.MainIcon}>
-        
-      {todayData.weather?
-        <Image style={{width:hp("15%"),height:hp("15%")}} source={{uri: `https://openweathermap.org/img/wn/${todayData.weather[0]?.icon}@2x.png`}}/>:
-        <></>}
-
-      </View>
-
-      <TouchableOpacity onPress={()=>navigation.navigate("WeatherTimelineScreen",{date: (new Date()).toDateString() })} style={styles.minMaxTempTxtContainer}>
-        <Text style={styles.minMaxTempTxt} >Min - {todayData.main?.temp_min}°C</Text>
-        <Text style={styles.minMaxTempTxt} >Max - {todayData.main?.temp_max}°C</Text>
-      </TouchableOpacity> 
-     
-      <ScrollView contentContainerStyle={{alignItems: "center",paddingHorizontal:wp('3%')}} horizontal style={styles.bottomContainer}>
-       
-       {Object.keys(weatherData).map((item,index)=><DatesContainer key={index} item={item}  />)}
-        
-      </ScrollView>
-      </View>
-      
-      }
-
+          <ScrollView
+            contentContainerStyle={{
+              alignItems: "center",
+              paddingHorizontal: wp("3%"),
+            }}
+            horizontal
+            style={styles.bottomContainer}
+          >
+            {Object.keys(weatherData).map((item, index) => (
+              <DatesContainer key={index} item={item} />
+            ))}
+          </ScrollView>
+        </View>
+      )}
     </View>
   );
-
-
-
 }
 
 const styles = StyleSheet.create({
@@ -411,33 +374,31 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: wp("5%"),
     borderTopRightRadius: wp("5%"),
     flexDirection: "row",
-    
   },
- 
-  leftPaginationIcon:{
-    position:"absolute",
-    left:wp("2%"),
-    top:hp("47%"),
-    zIndex:1
 
+  leftPaginationIcon: {
+    position: "absolute",
+    left: wp("2%"),
+    top: hp("47%"),
+    zIndex: 1,
   },
-  rightPaginationIcon:{
-    position:"absolute",
-    right:wp("2%"),
-    top:hp("47%"),
-    zIndex:1
+  rightPaginationIcon: {
+    position: "absolute",
+    right: wp("2%"),
+    top: hp("47%"),
+    zIndex: 1,
   },
-  minMaxTempTxtContainer:{
-    alignSelf:"center",
-    flexDirection:"row",
-    textAlign:"center",
-    justifyContent:"center",
-    width:"50%",
-    justifyContent:"space-between"
+  minMaxTempTxtContainer: {
+    alignSelf: "center",
+    flexDirection: "row",
+    textAlign: "center",
+    justifyContent: "center",
+    width: "50%",
+    justifyContent: "space-between",
   },
-  minMaxTempTxt:{
-    color:"#2987c2",
-    fontSize:hp("1.5%"),
-    fontWeight:"800"
-  }
+  minMaxTempTxt: {
+    color: "#2987c2",
+    fontSize: hp("1.5%"),
+    fontWeight: "800",
+  },
 });
